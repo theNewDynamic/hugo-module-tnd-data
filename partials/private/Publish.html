@@ -1,0 +1,48 @@
+{{/*
+  Publish
+  Generate a markdown files from given context
+
+  @author @regisphilibert
+
+  @context Map (.)
+    String (.filepath)
+    String (.body)
+    String (.format)
+    Map (.data)
+
+  @access public
+
+  @returns String (A success message) | False
+
+  @uses
+     - partial
+
+  @example - Go Template
+    {{ with partialCached "Publish" context context }}
+      {{ something = . }}
+    {{ end }}
+*/}}
+
+{{ $success := false }}
+{{ $filepath := .filepath }}
+{{ $data := .data }}
+{{ $body := .body }}
+{{ $format := .format }}
+
+{{ $file := dict }}
+{{/* 99% of files will be using json */}}
+{{ $front_matter_string := jsonify $data }}
+{{/* For the rest, we'll use remarshal with the appropriate delimiter */}}
+{{ if eq $format "toml" "yaml" }}
+  {{ $front_matter_string = transform.Remarshal $format $front_matter_string }}
+  {{ $delimiter := cond (eq $format "toml") "+++" "---" }}
+  {{ $front_matter_string = print $delimiter "\n" $front_matter_string $delimiter }}
+{{ end }}
+
+{{ $string := print $front_matter_string "\n" $body }}
+{{ $file = $string | resources.FromString $filepath }}
+{{ with $file }}
+  {{ $publish := .Publish }}
+  {{ $success = $filepath }}
+{{ end }}
+{{ return $success }}

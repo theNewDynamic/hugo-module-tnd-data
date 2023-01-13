@@ -1,0 +1,56 @@
+{{/*
+  Go
+  The module main function.
+  It will browse the project data files, format the resulting entries and publish them.
+
+  @author @regisphilibert
+
+  @context Any (.)
+
+  @access private
+
+  @returns Slice of Strings
+
+  @uses
+     - private/GetConfig
+     - private/ParseEntries
+     - private/publish
+  @example - Go Template
+    {{ with partialCached "GetEntries" context context }}
+      {{ something = . }}
+    {{ end }}
+*/}}
+{{ $config := partialCached "tnd-data/private/GetConfig" "GetConfig" }}
+{{ $quiet := $config.quiet | default false }}
+{{ $files := slice }}
+
+{{/* 1. We need to find the data files inside the project's content directory. */}}
+{{ $data_files_basename := $config.data_files_basename | default "data" }}
+{{/* For some reason `**data.*` does not find files at the root in this context (mount?).
+  So we run two. */}}
+{{ $patterns := slice 
+  (printf "/%s.*" $data_files_basename)
+  (printf "/**/%s.*" $data_files_basename)
+}}
+{{ $data_files := slice }}
+{{ range $patterns }}
+  {{ with resources.Match . }}
+    {{ $data_files = $data_files | append . }}
+  {{ end }}
+{{ end }}
+
+{{/* 2. We can now process the data files to surface the entries and publish them */}}
+{{ range $data_file := $data_files }}
+  {{ with partial "tnd-data/private/ParseEntries" . }}
+    {{ $files = $files | append (printf "From /%s: %v files" $data_file.Name (len .)) }}
+    {{ range . }}
+      {{ with partial "tnd-data/private/Publish" . }}
+        {{ if not $quiet }}
+          {{ $files = $files | append (printf "- %s" .) }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ partial "tnd-data/warn" (printf "We published the following files: \n%s" (delimit $files "\n")) }}
+{{ return $files }}

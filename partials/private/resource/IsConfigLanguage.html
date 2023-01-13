@@ -1,0 +1,28 @@
+{{/*
+  IsConfigLanguage
+  Test if a given Resource is yaml, json or toml
+
+  @author @regisphilibert
+
+  @context Resource (.)
+
+  @access private
+
+  @returns Boolean
+
+  @uses
+     - partial
+
+  @example - Go Template
+    {{ with partialCached "IsConfigLanguage" context context }}
+      {{ something = . }}
+    {{ end }}
+*/}}
+{{ $test := false }}
+{{ if eq .MediaType.MainType "application" }}
+  {{ if eq .MediaType.SubType "yaml" "json" "toml" }}
+    {{ $test = true }}
+  {{ end }}
+{{ end }}
+
+{{ return $test }}

@@ -1,19 +1,20 @@
-This is a template repo. To start.
+# Data Hugo Module
 
-search `{moduleName}` through the project and replace it with the module identifier (ex: `socials` for `hugo-module-tnd-socials`)
+This module helps generate markdown files from data to be later fed into a subsequent Hugo build.
 
-# {moduleName} Hugo Module
-
-(intro)
+You should be aware of the current workaround to build Pages from Data with Hugo as seen [here](https://www.thenewdynamic.com/article/toward-using-a-headless-cms-with-hugo-part-2-building-from-remote-api/).
 
 ## Requirements
 
 Requirements:
 - Go 1.14
-- Hugo 0.61.0
+- Hugo 0.107.0
 
 
 ## Installation
+
+IMPORTANT! 
+This module should be used on the ["prebuild"](https://www.thenewdynamic.com/article/toward-using-a-headless-cms-with-hugo-part-2-building-from-remote-api/#step-1) hugo project, and not the main project.
 
 If not already, [init](https://gohugo.io/hugo-modules/use-modules/#initialize-a-new-module) your project as Hugo Module:
 
@@ -27,33 +28,150 @@ Configure your project's module to import this module:
 # config.yaml
 module:
   imports:
-  - path: github.com/theNewDynamic/hugo-module-tnd-{moduleName}
+  - path: github.com/theNewDynamic/hugo-module-tnd-data
+```
+
+## Mount settings
+
+In order for the module to surface your content's data file, you need to setup the following mounts config on the prebuild project:
+
+```yaml
+module:
+  mounts:
+    - source: ../content
+      target: assets
+  imports:
+  - path: github.com/theNewDynamic/hugo-module-tnd-data
 ```
 
 ## Usage
 
-### Some Partial/Feature
+Each section or the root of your content directory can use it's own data file. A data file can either `json`, `toml`, `yaml` or `hugo`/`html`. This could be the content directory of your projets
+
+```
+content
+├── blog
+│   ├── data.json
+│   └── an-extra-local-post.md
+├── travels
+│   └── data.yaml
+├── products
+│   └── data.hugo
+```
+
+Each data file should contain a Hugo readable version of an array of entries containing the following:
+
+__filename__: this will be used to generate the file name, we'll use the directory and append this with `.md` So from `books/data.yaml` the file will be printed at `books/{filename}.md`
+__filepath__: This will be used to generate the final destination of the file (instead of the filename logic described above).
+__data__: Will be printed as front matter
+__body__: (optinal) Will be printed as the file body (below front matter)
+
 
 #### Examples
 
+##### Harcoded ready to use Data
+
+Here is an example of a very basic `data.yaml` file containing an array of books.
+
+```yaml
+# /books/data.yaml
+- filename: my-first-book
+  data:
+    title: My firt Book
+- filepath: /not-book-dir/somewhere-else.md
+  data:
+    title: My second book
+  body: |-
+    Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. 
+    Pellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. 
+    Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.
+```
+
+
+So with the yaml file example above, the module will print two files in its books directory:
+
+/public/books/my-first-book.md:
+
+```
+{"title":"My firt Book"}
+```
+
+/public/not-book-dir/somewhere-else.md:
+
+```
+{"title":"My second book"}
+
+Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. 
+Pellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. 
+Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.
+```
+
+##### Dynamic Data
+
+This is fine for ready to use data. But if you need to format a tier produced data with the appropriate key expected by the module, or use the powerful `resources.GetRemote` to fetch the data from an API, you'll need more power.
+
+You can use a `data.hugo` file which will, like a returning partial, returns an array. The module will process it in order to generate markdown files.
+
+```
+{{/* /travels/data.hugo */}}
+{{ $travels := slice }}
+{{ range site.Data.travels }}
+  {{ $travels = $travels | append (dict
+    "filename" .slug_string
+    "data" .metadata
+    "body" .contentMD 
+  ) }}
+{{ end }}
+{{ return $travels}}
+```
+
+
+```
+{{/* /monsters/data.hugo */}}
+{{ $monsters := slice }}
+{{ with resources.GetRemote "https://monsters-api.netlify.app/?v=2" }} 
+  {{ with .Content | unmarshal }}
+    {{ range . }}
+      {{ $monster := dict
+        "filename" .id
+        "data" (dict
+          "title" .title
+          "img" .img
+        )
+        "body" .content 
+      }}
+      {{ $monsters = $monsters | append $monster }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ return $monsters }}
+```
+
 ### Settings
 
-Settings are added to the project's parameter under the `tnd_{moduleName}` map as shown below.
+Settings are added to the project's parameter under the `tnd_data` map as shown below. Here are an example of the available keys set with their defaults.
 
 ```yaml
 # config.yaml
 params:
-  tnd_{moduleName}:
-    [...]
+  tnd_data:
+    data_file_basenames: data
+    fm_format: json
 ```
 
-#### Configure Key 1
+#### Data File names (data_file_basename)
 
-#### Configure Key 2
+Defaults to `data`. If the data file cannot be called `data.*`, set the basename the module should look for.
 
-#### Defaults
+#### Front Matter Format (fm_format)
+The markdown files generated by the module are meant to be fed to Hugo, so readability should'nt be a problem. But for debugging purposes it might be useful to generate more "readable" markdown files. This allow the user to use set `yaml` or `toml` for the generated files Front Matter.
 
-ld copy/paste the above to your settings and append with new extensions.
+### Data files and Syntax Highlighting
+
+We understand that your IDE might not really know what to do with files ending in `.hugo`.
+For this reason the module will also read data files ending with the `html` extension.
+
+But as Hugo will choke on Go Template syntax inside its content directory, you will need to make use of the `ignoreFiles` settings to exclude you HTML data files from the main project content directory.
 
 ## theNewDynamic
 

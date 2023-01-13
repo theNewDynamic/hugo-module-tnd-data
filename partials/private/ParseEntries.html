@@ -1,0 +1,66 @@
+{{/*
+  ParseEntries
+  Will interpret entries produced by the data files and prepare them for the publish function.
+
+  @author @regisphilibert
+
+  @context Slice of Maps
+    - String* (.filename) | String* (.filepath)
+      Map (.data)
+      String (.body)
+
+  @access private
+
+  @returns Slice of Maps
+    - String (.filepath)
+      String (.format)
+      Map (.data)
+      String (.body)
+
+  @uses
+    - private/GetConfig
+    - private/resource/IsConfigLanguage
+    - warn
+*/}}
+
+{{ $entries := slice }}
+{{ $output := slice }}
+{{ $dir := path.Dir $.Name }}
+{{ $config := partialCached "tnd-data/private/GetConfig" "GetConfig" }}
+{{ $format := $config.format | default "json" }}
+
+{{ if partial "tnd-data/private/resource/IsConfigLanguage" . }}
+  {{ $entries = .Content | unmarshal }}
+{{ else  }}
+  {{ $entries = partial .Name .Name }}
+{{ end }}
+
+{{ with $entries }}
+  {{ if reflect.IsSlice . }}
+    {{ range  $entry := . }}
+      {{ $filepath := "" }}
+      {{ with .filepath }}
+        {{ $filepath = . }}
+      {{ else }}
+        {{ with .filename }}
+          {{ $filepath = print $dir "/" (trim . "/") ".md" }}
+        {{ end }}
+      {{ end }}
+      {{ with $filepath }}
+        {{ $output = $output | append (dict
+            "filepath" .
+            "file" $
+            "format" ($entry.format | default $format)
+            "data" $entry.data
+            "body" ($entry.body | default "")
+        ) }}
+      {{ else }}
+        {{ partial "tnd-data/warn" (printf "An entry from this datafile %#v is missing a filename" $.Name) }}
+      {{ end }}
+    {{ end }}
+  {{ else }}
+    {{ partial "tnd-data/warn" (printf "the Data file %s does not return a slice" $.Name) }}
+  {{ end }}
+{{ end }}
+
+{{ return $output }}
