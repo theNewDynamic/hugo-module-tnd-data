@@ -19,8 +19,9 @@
     {{ end }}
 */}}
 {{ $test := false }}
-{{ if eq .MediaType.MainType "application" }}
-  {{ if eq .MediaType.SubType "yaml" "json" "toml" }}
+{{/* Would rather use `.MediaType.SubType` but I find those are not always consistent across machines. */}}
+{{ with path.Ext .Name }}
+  {{ if eq (lower .) ".yml" ".yaml" ".json" ".toml" }}
     {{ $test = true }}
   {{ end }}
 {{ end }}

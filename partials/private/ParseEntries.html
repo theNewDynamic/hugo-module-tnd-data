@@ -5,7 +5,7 @@
   @author @regisphilibert
 
   @context Slice of Maps
-    - String* (.filename) | String* (.filepath)
+    - String* (.basename) | String* (.filepath)
       Map (.data)
       String (.body)
 
@@ -29,37 +29,39 @@
 {{ $config := partialCached "tnd-data/private/GetConfig" "GetConfig" }}
 {{ $format := $config.format | default "json" }}
 
+{{/*  We test if Hugo is capable of unmarshaling fhe file */}}
 {{ if partial "tnd-data/private/resource/IsConfigLanguage" . }}
   {{ $entries = .Content | unmarshal }}
-{{ else  }}
+{{/* Else, it must be a returning partial */}}
+{{ else }}
   {{ $entries = partial .Name .Name }}
 {{ end }}
 
 {{ with $entries }}
+  {{/* We test for a slice in case the returning partial  */}}
   {{ if reflect.IsSlice . }}
     {{ range  $entry := . }}
       {{ $filepath := "" }}
       {{ with .filepath }}
         {{ $filepath = . }}
       {{ else }}
-        {{ with .filename }}
+        {{ with .basename }}
           {{ $filepath = print $dir "/" (trim . "/") ".md" }}
         {{ end }}
       {{ end }}
       {{ with $filepath }}
         {{ $output = $output | append (dict
             "filepath" .
-            "file" $
             "format" ($entry.format | default $format)
             "data" $entry.data
             "body" ($entry.body | default "")
         ) }}
       {{ else }}
-        {{ partial "tnd-data/warn" (printf "An entry from this datafile %#v is missing a filename" $.Name) }}
+        {{ partial "tnd-data/warn" (printf "An entry from the data file '%#v' is missing a basename" $.Name) }}
       {{ end }}
     {{ end }}
   {{ else }}
-    {{ partial "tnd-data/warn" (printf "the Data file %s does not return a slice" $.Name) }}
+    {{ partial "tnd-data/warn" (printf "the data file %s does not return a slice" $.Name) }}
   {{ end }}
 {{ end }}
 

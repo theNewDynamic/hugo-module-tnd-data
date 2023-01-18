@@ -25,7 +25,7 @@
 {{ $files := slice }}
 
 {{/* 1. We need to find the data files inside the project's content directory. */}}
-{{ $data_files_basename := $config.data_files_basename | default "data" }}
+{{ $data_files_basename := $config.data_files_basename | default "_content" }}
 {{/* For some reason `**data.*` does not find files at the root in this context (mount?).
   So we run two. */}}
 {{ $patterns := slice 
@@ -42,7 +42,7 @@
 {{/* 2. We can now process the data files to surface the entries and publish them */}}
 {{ range $data_file := $data_files }}
   {{ with partial "tnd-data/private/ParseEntries" . }}
-    {{ $files = $files | append (printf "From /%s: %v files" $data_file.Name (len .)) }}
+    {{ $files = $files | append (printf "From /%s: %v files" $data_file.Name (len . | lang.NumFmt 0)) }}
     {{ range . }}
       {{ with partial "tnd-data/private/Publish" . }}
         {{ if not $quiet }}
