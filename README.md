@@ -93,6 +93,7 @@ Each section or the root of your main project's content directory can use it's o
 
 ```
 content
+├── _content.yaml
 ├── blog
 │   ├── _content.json
 │   └── an-extra-local-post.md
@@ -102,12 +103,9 @@ content
 │   └── _content.hugo
 ```
 
-Each _content file should contain a Hugo readable version of an array of entries. Each entry should be an object containing the following:
+Each _content file should contain a Hugo readable version of an array of entries where each entry is an object containing the following:
 
-__destination*__: A string. Can either be in the form of a slug or a complete filepath.
-**If the extension is ommited**, the string will be treated as a slug and the destination is detucted using it and the directory where the `_content` file is located. 
-**If an extension is included**, the module will use the string as is and skip the deduction logic.
-Ex: From a `blog/_content.yaml` file, the entry with `destination: "travels/trip-in-belize"` will be saved at `blog/travels/trip-in-belize.md` while another entry from the same file with `destination: "americas/trip-in-belize.md"` will be saved at `/americas/trip-in-belize.md`
+__destination*__: A string. Can either be in the form of a slug (ex: `my-web-page`) in which case the filepath will be deducted or a full filepath with extension `/books/city-on-a-hill.md`.
 
 __data__: An object. This will be printed as the Front Matter of the entry.
 
@@ -247,6 +245,14 @@ You can use a `_content.hugo` file which will at as a returning partial and retu
 ```
 
 ## Notes
+
+### A note on the `destination` setting.
+
+**If the extension is ommited**, the string will be treated as a slug and the destination is detucted using the latter and the directory where the `_content` file is located.
+
+**If an extension is included**, the module will use the string as is and skip the deduction logic.
+
+Ex: From a `blog/_content.yaml` file, the entry with `destination: "travels/trip-in-belize"` will be saved at `blog/travels/trip-in-belize.md` while another entry from the same file with `destination: "americas/trip-in-belize.md"` will be saved at `/americas/trip-in-belize.md`
 
 ### A note on generating Data files. 
 
