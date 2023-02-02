@@ -89,7 +89,7 @@ Yes, your prebuild project does not need any layouts files on its own, it'll be 
 
 ## Usage
  
-Each section or the root of your content directory can use it's own `_content` file. A data file can either be `json`, `toml`, `yaml` or `hugo`/`html`. This could be the content directory of your project:
+Each section or the root of your main project's content directory can use it's own `_content` file. A data file can either be `json`, `toml`, `yaml` or `hugo`/`html`. This could be the content directory of your project:
 
 ```
 content
@@ -102,9 +102,9 @@ content
 │   └── _content.hugo
 ```
 
-Each _content file should contain a Hugo readable version of an array of entries. Each entries should be an object containing the following:
+Each _content file should contain a Hugo readable version of an array of entries. Each entry should be an object containing the following:
 
-__destination*__: A string. Can either be in the form of a slug or a full complete filepath.
+__destination*__: A string. Can either be in the form of a slug or a complete filepath.
 **If the extension is ommited**, the string will be treated as a slug and the destination is detucted using it and the directory where the `_content` file is located. 
 **If an extension is included**, the module will use the string as is and skip the deduction logic.
 Ex: From a `blog/_content.yaml` file, the entry with `destination: "travels/trip-in-belize"` will be saved at `blog/travels/trip-in-belize.md` while another entry from the same file with `destination: "americas/trip-in-belize.md"` will be saved at `/americas/trip-in-belize.md`
@@ -120,93 +120,6 @@ To generate the mardown files form the main project's directory:
 hugo -s _prebuild
 ```
 ☝️ Where "_prebuild" is the directory of your prebuild Hugo project.
-
-
-#### Examples
-
-##### Harcoded ready to use Data
-
-Here is an example of a very basic `books/_content.yaml` file containing an array of books.
-
-_`/books/data.json`_:
-```json
-[
-  {
-    "destination": "my-first-book",
-    "data": {
-      "title": "My firt Book"
-    }
-  },
-  {
-    "destination": "/not-book-dir/somewhere-else.md",
-    "data": {
-      "title": "My second book"
-    },
-    "body": "Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. \nPellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. \nCras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis."
-  }
-]
-```
-
-
-So with the yaml file example above, the module will print two files in its books directory:
-
-/public/books/my-first-book.md:
-
-```
-{"title":"My firt Book"}
-```
-
-/public/not-book-dir/somewhere-else.md:
-
-```
-{"title":"My second book"}
-
-Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. 
-Pellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. 
-Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.
-```
-
-##### Dynamic Data
-
-The above is fine for ready to use data. But if you need to format a tier produced data with the appropriate keys expected by the module, or use the powerful `resources.GetRemote` to fetch the data from an API, you'll need more power.
-
-You can use a `_content.hugo` file which will, like a returning partial, return an array. The module will process it in order to generate markdown files.
-
-```
-{{/* /travels/_content.hugo */}}
-{{ $travels := slice }}
-{{ range site.Data.travels }}
-  {{ $travel := dict
-    "destination" .slug_string
-    "data" .metadata
-    "body" .contentMD 
-  }}
-  {{ $travels = $travels | append $travel }}
-{{ end }}
-{{ return $travels}}
-```
-
-
-```
-{{/* /monsters/_content.hugo */}}
-{{ $monsters := slice }}
-{{ with resources.GetRemote "https://monsters-api.netlify.app/?v=2" }} 
-  {{ with .Content | unmarshal }}
-    {{ range . }}
-      {{ $monster := dict
-        "destination" .id
-        "data" (dict
-          "title" .title
-          "img" .img
-        )
-        "body" .content 
-      }}
-      {{ $monsters = $monsters | append $monster }}
-    {{ end }}
-  {{ end }}
-{{ end }}
-{{ return $monsters }}
-```
 
 ### Settings
 
@@ -246,11 +159,100 @@ From /posts/_content.json: 1,000 files
 - ...
 ```
 
+## Examples
+
+### Harcoded, ready to use data.
+
+Here is an example of a very basic `books/_content.json` file containing an array of books.
+
+_`/books/data.json`_:
+```json
+[
+  {
+    "destination": "my-first-book",
+    "data": {
+      "title": "My firt Book"
+    }
+  },
+  {
+    "destination": "/not-book-dir/somewhere-else.md",
+    "data": {
+      "title": "My second book"
+    },
+    "body": "Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. \nPellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. \nCras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis."
+  }
+]
+```
+
+
+So with the file example above, the module will print two files in its public directory:
+
+The first one at `/public/books/my-first-book.md`:
+
+```
+{"title":"My firt Book"}
+```
+
+The second one at `/public/not-book-dir/somewhere-else.md`:
+
+```
+{"title":"My second book"}
+
+Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. 
+Pellentesque ornare sem [lacinia](/here) quam venenatis vestibulum. Donec sed odio dui. 
+Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.
+```
+
+### Dynamic Data
+
+The above is fine for ready to use data. But if you need to format a tier produced data with the appropriate keys expected by the module, or use the powerful `resources.GetRemote` to fetch the data from an API, you'll need more power.
+
+You can use a `_content.hugo` file which will at as a returning partial and return an array. The module will then process it in order to generate markdown files.
+
+#### from a local Data file.
+```
+{{/* /travels/_content.hugo */}}
+{{ $travels := slice }}
+{{ range site.Data.travels }}
+  {{ $travel := dict
+    "destination" .slug_string
+    "data" .metadata
+    "body" .contentMD 
+  }}
+  {{ $travels = $travels | append $travel }}
+{{ end }}
+{{ return $travels}}
+```
+
+#### from a remote API
+```
+{{/* /monsters/_content.hugo */}}
+{{ $monsters := slice }}
+{{ with resources.GetRemote "https://monsters-api.netlify.app/?v=2" }} 
+  {{ with .Content | unmarshal }}
+    {{ range . }}
+      {{ $monster := dict
+        "destination" .id
+        "data" (dict
+          "title" .title
+          "img" .img
+        )
+        "body" .content 
+      }}
+      {{ $monsters = $monsters | append $monster }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ return $monsters }}
+```
+
+## Notes
+
 ### A note on generating Data files. 
 
 The module is agnostic on the kind of file created. With a destination containing a `.json` extension and a `data` object your file can be published and mounted as a data file. Just make sure your `_content` file returns an array even if you only need one file!
 
-For example from a `_content.hugo` file which could but -- does not have to -- live at the root of your main project's content directory.
+For example from a `_content.hugo` file which could but &mdash; does not have to &mdash; live at the root of your main project's content directory.
 
 ```
 {{ $data := dict }}
@@ -276,12 +278,12 @@ module:
       target: data
 ```
 
-### A note on `_content` Files and Syntax Highlighting
+### A note on `_content` files and syntax highlighting
 
 We understand that your IDE might not really know what to do with files ending in `.hugo`.
-For this reason the module will also read `_content` files ending with the `html` extension.
+For this reason the module will also read `_content` files ending with the `.html` extension.
 
-But as Hugo will choke on Go Template syntax inside its content directory, you will need to make use of the `ignoreFiles` settings to exclude you HTML data files from the main project content directory.
+But as Hugo will choke on Go Template syntax inside its content directory, you will need to make use of the `ignoreFiles` settings to exclude you HTML data files from the main project's content directory.
 
 ```yaml
 # /config.yaml
@@ -291,7 +293,7 @@ ignoreFiles:
 
 ### A note on `--cleanDestinationDir`
 
-It is wise to use `--cleanDestinationDir` when building the prebuild project to ensure deleted entries are not kept in its public directory. There is a current bug in Hugo wich ignores this flag if a `static` directory is not present in the project. You can solve this by simply adding a `_prebuild/static/.keep` file.
+It is wise to use `--cleanDestinationDir` when building the prebuild project to ensure deleted entries are not kept in its public directory. TBut there is a current bug in Hugo wich ignores this flag if a `static` directory is not present in the project. You can solve this by simply adding a `_prebuild/static/.keep` file.
 
 ## theNewDynamic
 
