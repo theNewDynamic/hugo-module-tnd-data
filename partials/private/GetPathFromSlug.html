@@ -1,0 +1,21 @@
+{{/*
+  GetPathFromSlug
+  Returns a filepath detucted from a directory and a slug
+
+  @author @regisphilibert
+
+  @context Map
+    String (.dir)
+    Map (.slug)
+
+  @access private
+
+  @returns String
+
+*/}}
+{{/* We get rid of any trailing slash from the slug */}}
+{{ $slug :=  print (trim .slug "/") ".md" }}
+
+{{ $path := path.Join .dir $slug }}
+
+{{ return $path }}

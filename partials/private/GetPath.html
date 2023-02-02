@@ -1,0 +1,56 @@
+{{/*
+  GetPath
+  Returns the path to be used for a data entry based on the data file directory and the entry's `destination`.
+
+  @author @regisphilibert
+
+  @context Map
+    String (.dir)
+    Map (.entry)
+
+  @access private
+
+  @returns String
+
+  @uses
+     - private/GetPathFromSlug
+*/}}
+{{ $filepath := "" }}
+{{ $slug := "" }}
+{{ $path := "" }}
+
+{{ with .entry }}
+  {{/* First we check the legacy filepath/basename entry settings and determine filepath and basename */}}
+  {{ with .filepath }}
+    {{ $path = . }}
+  {{ else }}
+    {{ with .basename }}
+      {{ $slug = . }}
+    {{ end }}
+  {{ end }}
+  {{/* Then the new `destination` setting */}}
+  {{ with $destination := .destination }}
+    {{ with path.Ext . }}
+      {{/* If we find an extension, we have a filepath */}}
+      {{ $path = $destination }}
+    {{ else }}
+      {{/* If not, this is a simple slug or basename */}}
+      {{ $slug = $destination }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ with $path }}
+  {{ $filepath = . }}
+{{ else }}
+  {{ with $slug }}
+    {{/* We use the GetPathFromSlug partial to build a filepath from the basename */}}
+    {{ $args := dict
+      "dir" $.dir
+      "slug" $slug
+    }}
+    {{ $filepath = partialCached "tnd-data/private/GetPathFromSlug" $args $args }}
+  {{ end }}
+{{ end }}
+
+{{ return $filepath }}

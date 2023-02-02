@@ -41,14 +41,7 @@
   {{/* We test for a slice in case the returning partial  */}}
   {{ if reflect.IsSlice . }}
     {{ range  $entry := . }}
-      {{ $filepath := "" }}
-      {{ with .filepath }}
-        {{ $filepath = . }}
-      {{ else }}
-        {{ with .basename }}
-          {{ $filepath = print $dir "/" (trim . "/") ".md" }}
-        {{ end }}
-      {{ end }}
+      {{ $filepath := partial "tnd-data/private/GetPath" (dict "dir" $dir "entry" .) }}
       {{ with $filepath }}
         {{ $output = $output | append (dict
             "filepath" .
@@ -57,7 +50,7 @@
             "body" ($entry.body | default "")
         ) }}
       {{ else }}
-        {{ partial "tnd-data/warn" (printf "An entry from the data file '%#v' is missing a basename" $.Name) }}
+        {{ partial "tnd-data/warn" (printf "An entry from the data file '%#v' is missing a `destination`" $.Name) }}
       {{ end }}
     {{ end }}
   {{ else }}

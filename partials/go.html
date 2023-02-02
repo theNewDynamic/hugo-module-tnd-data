@@ -15,10 +15,6 @@
      - private/GetConfig
      - private/ParseEntries
      - private/publish
-  @example - Go Template
-    {{ with partialCached "GetEntries" context context }}
-      {{ something = . }}
-    {{ end }}
 */}}
 {{ $config := partialCached "tnd-data/private/GetConfig" "GetConfig" }}
 {{ $quiet := $config.quiet | default false }}
@@ -53,4 +49,5 @@
   {{ end }}
 {{ end }}
 {{ partial "tnd-data/warn" (printf "We published the following files: \n%s" (delimit $files "\n")) }}
+
 {{ return $files }}
