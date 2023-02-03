@@ -299,7 +299,7 @@ ignoreFiles:
 
 ### A note on `--cleanDestinationDir`
 
-It is wise to use `--cleanDestinationDir` when building the prebuild project to ensure deleted entries are not kept in its public directory. TBut there is a current bug in Hugo wich ignores this flag if a `static` directory is not present in the project. You can solve this by simply adding a `_prebuild/static/.keep` file.
+It is wise to use `--cleanDestinationDir` when building the prebuild project to ensure deleted entries are not kept in its public directory. But there is a current bug in Hugo wich ignores this flag if a `static` directory is not present in the project. You can solve this by simply adding a `_prebuild/static/.keep` file.
 
 ## theNewDynamic
 
